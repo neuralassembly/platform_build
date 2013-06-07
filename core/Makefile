@@ -384,7 +384,7 @@ $(INSTALLED_BOOTIMAGE_TARGET): $(MKEXT2IMG) $(INTERNAL_BOOTIMAGE_FILES)
 	$(call pretty,"Target boot image: $@")
 	$(hide) $(MKEXT2BOOTIMG) $(INTERNAL_BOOTIMAGE_ARGS) --output $@
 
-else # TARGET_BOOTIMAGE_USE_EXT2 != true
+else ifndef BOARD_CUSTOM_BOOTIMG_MK # TARGET_BOOTIMAGE_USE_EXT2 != true
 
 $(INSTALLED_BOOTIMAGE_TARGET): $(MKBOOTIMG) $(INTERNAL_BOOTIMAGE_FILES)
 	$(call pretty,"Target boot image: $@")
@@ -680,6 +680,7 @@ OTA_PUBLIC_KEYS := $(DEFAULT_SYSTEM_DEV_CERTIFICATE).x509.pem
 #	@mkdir -p $(dir $@)
 #	java -jar $(DUMPKEY_JAR) $(PRIVATE_OTA_PUBLIC_KEYS) $(extra_keys) > $@
 
+ifndef BOARD_CUSTOM_BOOTIMG_MK
 $(INSTALLED_RECOVERYIMAGE_TARGET): $(MKBOOTFS) $(MKBOOTIMG) $(MINIGZIP) \
 		$(INSTALLED_RAMDISK_TARGET) \
 		$(INSTALLED_BOOTIMAGE_TARGET) \
@@ -713,6 +714,7 @@ $(INSTALLED_RECOVERYIMAGE_TARGET): $(MKBOOTFS) $(MKBOOTIMG) $(MINIGZIP) \
 	$(MKBOOTIMG) $(INTERNAL_RECOVERYIMAGE_ARGS) --output $@
 	@echo ----- Made recovery image -------- $@
 	$(hide) $(call assert-max-image-size,$@,$(BOARD_RECOVERYIMAGE_PARTITION_SIZE),raw)
+endif
 
 else
 INSTALLED_RECOVERYIMAGE_TARGET :=
@@ -732,6 +734,10 @@ ifneq ($(BOARD_NAND_SPARE_SIZE),)
 mkyaffs2_extra_flags += -s $(BOARD_NAND_SPARE_SIZE)
 else
 BOARD_NAND_SPARE_SIZE := 64
+endif
+
+ifdef BOARD_CUSTOM_BOOTIMG_MK
+include $(BOARD_CUSTOM_BOOTIMG_MK)
 endif
 
 # -----------------------------------------------------------------
@@ -803,7 +809,11 @@ SYSTEMIMAGE_SOURCE_DIR := $(TARGET_OUT)
 # image size check calculation.
 ifneq ($(INSTALLED_RECOVERYIMAGE_TARGET),)
 intermediates := $(call intermediates-dir-for,PACKAGING,recovery_patch)
+ifndef BOARD_CUSTOM_BOOTIMG_MK
 RECOVERY_FROM_BOOT_PATCH := $(intermediates)/recovery_from_boot.p
+else
+RECOVERY_FROM_BOOT_PATCH :=
+endif
 $(RECOVERY_FROM_BOOT_PATCH): $(INSTALLED_RECOVERYIMAGE_TARGET) \
                              $(INSTALLED_BOOTIMAGE_TARGET) \
 			     $(HOST_OUT_EXECUTABLES)/imgdiff \
