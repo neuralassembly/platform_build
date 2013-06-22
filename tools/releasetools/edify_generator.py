@@ -195,18 +195,21 @@ class EdifyGenerator(object):
 
     fstab = self.info["fstab"]
     if fstab:
-      p = fstab[mount_point]
-      partition_type = common.PARTITION_TYPES[p.fs_type]
-      args = {'device': p.device, 'fn': fn}
-      if partition_type == "MTD":
-        self.script.append(
-            'write_raw_image(package_extract_file("%(fn)s"), "%(device)s");'
-            % args)
-      elif partition_type == "EMMC":
-        self.script.append(
-            'package_extract_file("%(fn)s", "%(device)s");' % args)
-      else:
-        raise ValueError("don't know how to write \"%s\" partitions" % (p.fs_type,))
+      try:
+        p = fstab[mount_point]
+        partition_type = common.PARTITION_TYPES[p.fs_type]
+        args = {'device': p.device, 'fn': fn}
+        if partition_type == "MTD":
+          self.script.append(
+             'write_raw_image(package_extract_file("%(fn)s"), "%(device)s");'
+              % args)
+        elif partition_type == "EMMC":
+          self.script.append(
+              'package_extract_file("%(fn)s", "%(device)s");' % args)
+        else:
+          raise ValueError("don't know how to write \"%s\" partitions" % (p.fs_type,))
+      except KeyError:
+        pass
 
   def SetPermissions(self, fn, uid, gid, mode):
     """Set file ownership and permissions."""
