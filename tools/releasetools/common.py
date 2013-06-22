@@ -152,7 +152,11 @@ def LoadRecoveryFSTab(zip):
     data = zip.read("RECOVERY/RAMDISK/etc/recovery.fstab")
   except KeyError:
     print "Warning: could not find RECOVERY/RAMDISK/etc/recovery.fstab in %s." % zip
-    data = ""
+    try:
+      data = zip.read("SYSTEM/etc/recovery.fstab")
+    except KeyError:
+      print "Warning: could not find SYSTEM/etc/recovery.fstab in %s." % zip
+      data = ""
 
   d = {}
   for line in data.split("\n"):
